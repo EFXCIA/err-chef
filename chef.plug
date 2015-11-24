@@ -1,0 +1,9 @@
+[Core]
+Name = Chef
+Module = chef
+
+[Documentation]
+Description = Chef server integration using the familiar knife command syntax
+
+[Python]
+Version = 3
