@@ -26,6 +26,10 @@ Requirements
 Installation
 ------------
 
+If you have the appropriate administrative privileges, you can install err-chef from chat...
+
+    !repos install https://github.com/jgrill/err-chef.git
+
 Use git clone into your Errbot's plugin directory. Use pip to install requirements...
 
     $ cd err-chef
