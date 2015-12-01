@@ -45,8 +45,9 @@ class Chef(BotPlugin):
     USER_CONF = {}
 
     def get_api(self, mess):
-        '''Check to see if the user has selected a knife.rb. If there is only
-        one, it will be selected automatically
+        '''Check to see if the user has selected a knife.rb
+
+        If there is only one, it will be selected automatically
 
         :param mess: Errbot message object
         '''
