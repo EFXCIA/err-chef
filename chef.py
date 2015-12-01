@@ -14,12 +14,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 from errbot import BotPlugin, botcmd
 import chef
+from chef.api import ChefAPI
 import datetime
 from time import time
 import requests
 from prettytable import PrettyTable
 import jinja2
 import os
+import glob
+
+CONFIG_DIR = os.path.expanduser('~/.err-chef')
 
 # disable SSL certificate warnings if using a snakeoil cert
 requests.packages.urllib3.disable_warnings()
@@ -38,6 +42,74 @@ class Chef(BotPlugin):
     STALE_TIME = 60 * 60
     OBJECTS = ['node', 'role', 'environment']
     VERBS = ['list', 'show']
+    USER_CONF = {}
+
+    def get_api(self, mess):
+        '''Check to see if the user has selected a knife.rb. If there is only
+        one, it will be selected automatically
+
+        :param mess: Errbot message object
+        '''
+        configs = self.get_config_files()
+        if len(configs) == 1:
+            # there is only one config, so auto-select it
+            self.set_config(mess, list(configs)[0])
+
+        if self.USER_CONF.get(mess.frm.person):
+            self.send(mess.frm,
+                      '/me Chef knife.rb: {}'
+                      .format(self.USER_CONF[mess.frm.person]['knife_file']),
+                      message_type=mess.type)
+        else:
+            raise Exception('You have not selected a knife.rb. Run "chef '
+                            'config list" to see a list of available '
+                            'configs and then use "chef config set '
+                            '<name>" to select one')
+
+        return ChefAPI.from_config_file(
+                       self.USER_CONF[mess.frm.person]['knife_file']
+                   )
+
+    def get_config_files(self):
+        '''Get knife.rb config(s)
+
+        :returns: result: dictionary of knife.rb name as key and path as value
+        '''
+        conf = glob.glob(os.path.join(CONFIG_DIR, 'knife*.rb'))
+        if len(conf) < 1:
+            raise Exception('No knife.rb files found at: {}'
+                            .format(os.path.join(CONFIG_DIR, 'knife-*.rb')))
+
+        return {os.path.basename(c): c for c in conf}
+
+    def set_config(self, mess, file_name):
+        '''Sets config to selected knife file
+
+        :param mess: Errbot message object
+        :param project_name: file name of knife.rb
+        '''
+        config_file = self.get_config_files()[file_name]
+        self.USER_CONF[mess.frm.person] = {'knife_file': config_file}
+
+        self.send(mess.frm,
+                  '/me Selected knife.rb {} for {}'
+                  .format(file_name, mess.frm.person),
+                  message_type=mess.type)
+
+    @botcmd(split_args_with=None)
+    def chef_config(self, mess, args):
+        '''Chef config [list|set <name>]'''
+        if len(args) == 0:
+            self.get_api(mess)
+            return ('Current knife config: {}'
+                    .format(self.USER_CONF[mess.frm.person]['knife_file']))
+        if args[0] == 'list':
+            return '\n'.join([k for k in self.get_config_files().keys()])
+        elif args[0] == 'set':
+            try:
+                self.set_config(mess, args[1])
+            except IndexError:
+                raise Exception('missing required argument!')
 
     @botcmd(split_args_with=None)
     def knife_node(self, mess, args):
@@ -65,10 +137,10 @@ class Chef(BotPlugin):
 
         :param mess: Errbot message object
         '''
-        self.send(mess.frm, u'/me is getting the list of nodes from Chef... ',
+        self.send(mess.frm, '/me is getting the list of nodes from Chef... ',
                   message_type=mess.type)
 
-        api = chef.autoconfigure()
+        api = self.get_api(mess)
 
         pt = PrettyTable(['Node'])
         pt.align = 'l'
@@ -88,7 +160,8 @@ class Chef(BotPlugin):
                              'Chef...'.format(node_name)),
                   message_type=mess.type)
 
-        api = chef.autoconfigure()
+        api = self.get_api(mess)
+
         node = chef.Node(node_name, api)
 
         ret = jinja.get_template('node.md').render({'node': node})
@@ -127,7 +200,8 @@ class Chef(BotPlugin):
         pt = PrettyTable(['Environment'])
         pt.align = 'l'
 
-        api = chef.autoconfigure()
+        api = self.get_api(mess)
+
         for env in chef.Environment.list(api=api):
             pt.add_row([env])
 
@@ -142,7 +216,8 @@ class Chef(BotPlugin):
         self.send(mess.frm, u'/me is getting the details for Chef environment '
                   '{} from Chef...'.format(env_name), message_type=mess.type)
 
-        api = chef.autoconfigure()
+        api = self.get_api(mess)
+
         env = chef.Environment(env_name, api=api)
 
         ret = jinja.get_template('env.md').render({'env': env})
@@ -181,7 +256,7 @@ class Chef(BotPlugin):
         pt = PrettyTable(['Role'])
         pt.align = 'l'
 
-        api = chef.autoconfigure()
+        api = self.get_api(mess)
 
         for role in chef.Role.list(api=api):
             pt.add_row([role])
@@ -197,7 +272,8 @@ class Chef(BotPlugin):
         self.send(mess.frm, u'/me is getting the details for Chef environment '
                   '{} from Chef...'.format(role_name), message_type=mess.type)
 
-        api = chef.autoconfigure()
+        api = self.get_api(mess)
+
         role = chef.Role(role_name, api=api)
 
         ret = jinja.get_template('role.md').render({'role': role})
@@ -213,7 +289,8 @@ class Chef(BotPlugin):
         self.send(mess.frm, (u'/me is getting the list of stale nodes from '
                              'Chef...'), message_type=mess.type)
 
-        api = chef.autoconfigure()
+        api = self.get_api(mess)
+
         results = chef.Search('node', args, api=api)
 
         # sort most stale first
@@ -235,7 +312,7 @@ class Chef(BotPlugin):
 
     @botcmd(split_args_with=None)
     def knife_search(self, mess, args):
-        '''Chef knife search ops. Params: <object> <query>'''
+        '''Chef knife search. Params: <object> <query>'''
         try:
             obj = args.pop(0)
             qry = args.pop(0)
@@ -249,7 +326,8 @@ class Chef(BotPlugin):
         self.send(mess.frm, (u'/me is searching Chef server for {} '
                   'matching "{}"...'.format(obj, qry)), message_type=mess.type)
 
-        api = chef.autoconfigure()
+        api = self.get_api(mess)
+
         results = chef.Search(obj, qry, api=api)
 
         pt = PrettyTable(['Matches'])
