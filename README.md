@@ -5,6 +5,38 @@ Errbot Chef server integration using the familiar knife command syntax. Multiple
 
 This plugin only performs read commands such as `list`, `show`, `search`, and `status`. It is the author's opinion that you should not make changes directly to your Chef server. Use SCM and a CI/CD process instead. ;)
 
+#### Example
+
+    !knife node list
+
+      /me is getting the list of nodes from Chef...
+      /me Chef knife.rb: /home/errbot/.err-chef/knife.rb
+
+      +----------------------------------+
+      | Node                             |
+      +----------------------------------+
+      | webserver01                      |
+      | supermarket                      |
+      | jenkins_slave_01                 |
+      | jenkins_slave_04                 |
+      | jenkins_slave_02                 |
+      +----------------------------------+
+
+    !knife node show supermarket
+
+      /me is getting node "supermarket" from Chef...
+      /me Chef knife.rb: /home/errbot/.err-chef/knife.rb
+
+      Node Name:   supermarket
+      Environment: supermarket_env_prod
+      FQDN:        supermarket.example.org
+      IP:          10.10.10.10
+      Run List:    recipe[supermarket_env]
+      Recipes:     supermarket_env::default, base::default, chef-client::delete_validation, chef-client::config, logrotate::default, chef-client::default, chef-client::service, chef-client::init_service, supermarket::default
+      Roles:
+      Platform:    centos 6.6
+      Tags:
+
 Available commands for Chef
 ---------------------------
 
@@ -15,7 +47,7 @@ Available commands for Chef
 • !knife search &lt;object&gt; &lt;query&gt; - Chef knife search ops
 • !knife status [query] - Chef knife status with optional search query
 
-Tip: See knife --help
+(see: https://docs.chef.io/knife.html)
 
 Requirements
 ------------
@@ -31,7 +63,9 @@ If you have the appropriate administrative privileges, you can install err-chef 
 
     !repos install https://github.com/jgrill/err-chef.git
 
-Use git clone into your Errbot's plugin directory. Use pip to install requirements...
+##### ...OR...
+
+Git clone into your Errbot's plugin directory. Use pip to install requirements...
 
     $ cd /path/to/errbot/plugins
     $ git clone https://github.com/jgrill/err-chef.git
@@ -43,9 +77,12 @@ Configuration
 
 #### Single Chef server
 
-Create a `.err-chef` directory in the Errbot user's home directory. Place a working `knife.rb` in `~/.err-chef` along with any required `*.pem` files.
+Create a `.err-chef` directory in the Errbot user's(1)(2) home directory. Place a working `knife.rb` in `~/.err-chef` along with any required `*.pem` files.
 
 (see: https://docs.chef.io/config_rb_knife.html)
+
+1. The Errbot user is the user Errbot is running under
+2. Don't run Errbot as root, m'kay? ;)
 
 #### Multiple Chef servers
 
