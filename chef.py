@@ -51,9 +51,9 @@ class Chef(BotPlugin):
         :param mess: Errbot message object
         '''
         configs = self.get_config_files()
-        if len(configs.keys()) == 1:
+        if len(configs) == 1:
             # there is only one config, so auto-select it
-            self.set_config(mess, list(configs.keys())[0])
+            self.set_config(mess, list(configs)[0])
 
         if self.USER_CONF.get(mess.frm.person):
             self.send(mess.frm,
