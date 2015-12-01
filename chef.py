@@ -75,17 +75,12 @@ class Chef(BotPlugin):
 
         :returns: result: dictionary of knife.rb name as key and path as value
         '''
-        result = {}
         conf = glob.glob(os.path.join(CONFIG_DIR, 'knife*.rb'))
         if len(conf) < 1:
             raise Exception('No knife.rb files found at: {}'
                             .format(os.path.join(CONFIG_DIR, 'knife-*.rb')))
 
-        for c in conf:
-            name = os.path.basename(c)
-            result[name] = c
-
-        return result
+        return {os.path.basename(c): c for c in conf}
 
     def set_config(self, mess, file_name):
         '''Sets config to selected knife file
