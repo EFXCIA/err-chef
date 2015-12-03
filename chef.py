@@ -12,16 +12,18 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
-from errbot import BotPlugin, botcmd
-import chef
-from chef.api import ChefAPI
 import datetime
-from time import time
-import requests
-from prettytable import PrettyTable
-import jinja2
-import os
 import glob
+import os
+from time import time
+
+import chef
+import jinja2
+import requests
+from chef.api import ChefAPI
+from errbot import BotPlugin, botcmd
+from prettytable import PrettyTable
+
 
 CONFIG_DIR = os.path.expanduser('~/.err-chef')
 
