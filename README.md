@@ -53,7 +53,7 @@ Requirements
 ------------
 - A Chef server
 - Python 3.4
-- pychef ~> 0.2.3
+- pychef ~> 0.2.4.dev0 (the author of pychef has not had a release in a while)
 - prettytable ~> 0.7.2
 
 Installation

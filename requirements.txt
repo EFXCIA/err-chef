@@ -1,2 +1,2 @@
-pychef==0.2.3
+-e git+http://github.com/coderanger/pychef.git#egg=Package
 prettytable==0.7.2
