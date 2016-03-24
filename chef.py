@@ -296,20 +296,27 @@ class Chef(BotPlugin):
 
         results = chef.Search('node', args, api=api)
 
+        nodes = []
+
+        for node in results:
+            if not node.object.attributes.get('ohai_time'):
+                node.object.attributes['ohai_time'] = 1
+            last_run = int(time() - node.object.attributes['ohai_time'])
+            if last_run >= self.STALE_TIME:
+                node.object.attributes['last_run'] = last_run
+                nodes.append(node)
+
         # sort most stale first
-        results = sorted(results,
+        results = sorted(nodes,
                          key=lambda r: r.object.attributes['ohai_time'])
 
         pt = PrettyTable(['Node', 'Last Run'])
         pt.align = 'l'
 
         for node in results:
-            if node.object.attributes['ohai_time']:
-                last_run = int(time() - node.object.attributes['ohai_time'])
-
-                if last_run >= self.STALE_TIME:
-                    pt.add_row([node.object.name,
-                               str(datetime.timedelta(seconds=last_run))])
+            delta = datetime.timedelta(
+                seconds=node.object.attributes['last_run'])
+            pt.add_row([node.object.name, str(delta)])
 
         return '/code {}'.format(pt)
 
